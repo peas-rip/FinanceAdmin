@@ -25,7 +25,7 @@ export default function AdminDashboard() {
     const token = sessionStorage.getItem("admin_token");
 
     if (!token) {
-      navigate("/admin/login");
+      navigate("/admin/logout");
       return;
     }
 
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
       title: "Logged Out",
       description: "You have been successfully logged out",
     });
-    navigate("/admin/logout");
+    navigate("/admin/login");
   };
 
   const handleViewDetails = (application) => {
@@ -260,12 +260,7 @@ export default function AdminDashboard() {
             </select>
 
             {/* Date Filter */}
-            <input
-              type="date"
-              className="px-4 py-2 border rounded-lg"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-            />
+            
 
             {/* Reset */}
             <Button
@@ -274,7 +269,7 @@ export default function AdminDashboard() {
                 setSearch("");
                 setFilterLoan("");
                 setFilterGender("");
-                setFilterDate("");
+    
               }}
             >
               Clear
@@ -368,34 +363,80 @@ export default function AdminDashboard() {
       </div>
 
       {/* APPLICATION DETAILS MODAL */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Application Details</DialogTitle>
-            <DialogDescription>
-              Complete information for application {selectedApplication?._id}
-            </DialogDescription>
-          </DialogHeader>
 
-          {selectedApplication && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+    <DialogHeader>
+      <DialogTitle>Application Details</DialogTitle>
+      <DialogDescription>
+        Complete information for application {selectedApplication?._id}
+      </DialogDescription>
+    </DialogHeader>
 
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Full Name</p>
-                  <p>{selectedApplication.name}</p>
-                </div>
+{selectedApplication && (
+  <div className="space-y-4">
 
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Phone Number</p>
-                  <p>{selectedApplication.phoneNumber}</p>
-                </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Full Name</p>
+        <p>{selectedApplication.name}</p>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Phone Number</p>
+        <p>{selectedApplication.phoneNumber}</p>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Primary Contact Number</p>
+        <p>{selectedApplication.primaryContactNumber}</p>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Address</p>
+        <p>{selectedApplication.address}</p>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
+        <p>{new Date(selectedApplication.dateOfBirth).toLocaleDateString()}</p>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Gender</p>
+        <p>{selectedApplication.gender}</p>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Loan Category</p>
+        <p>{formatLoanCategory(selectedApplication.loanCategory)}</p>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Submitted At</p>
+        <p>{new Date(selectedApplication.submittedAt).toLocaleString()}</p>
+      </div>
+
+      {/* Referral Info */}
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Referral Name</p>
+        <p>{selectedApplication.referralName || "-"}</p>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Referral Phone</p>
+        <p>{selectedApplication.referralPhone || "-"}</p>
+      </div>
+
+    </div>
+  </div>
+)}
+
+
+  </DialogContent>
+</Dialog>
+
     </div>
   );
 }
