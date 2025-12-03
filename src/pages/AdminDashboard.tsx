@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,11 +18,11 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Users, FileText, Download, LogOut, Settings } from "lucide-react";
+import { Download, LogOut, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BACKEND_URL } from "@/config";
 
@@ -34,69 +33,12 @@ export default function AdminDashboard() {
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [filterLoan, setFilterLoan] = useState("");
-  const [filterGender, setFilterGender] = useState("");
-  const [filterDate, setFilterDate] = useState("");
-
   useEffect(() => {
     const token = sessionStorage.getItem("admin_token");
-    if (!token) {
-      navigate("/admin/login");
-      return;
-    }
+    if (!token) return navigate("/admin/login");
+
     fetchApplications(token);
   }, []);
-
-  const handleDelete = async (application) => {
-    if (!confirm(`Are you sure you want to delete application ${application.name}?`)) return;
-
-    try {
-      const token = sessionStorage.getItem("admin_token");
-
-      const res = await fetch(
-        `${BACKEND_URL}/api/applications/${application._id}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const text = await res.text();
-      let data;
-
-      try {
-        data = JSON.parse(text);
-      } catch {
-        console.error("Non-JSON response:", text);
-        throw new Error("Server returned HTML instead of JSON");
-      }
-
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: data.message || "Failed to delete application",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Deleted",
-        description: `Application ${application._id} has been deleted`,
-      });
-
-      setApplications((prev) => prev.filter((app) => app._id !== application._id));
-      setIsDialogOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast({
-        title: "Error",
-        description: "Server not responding",
-        variant: "destructive",
-      });
-    }
-  };
 
   const fetchApplications = async (token) => {
     try {
@@ -113,7 +55,6 @@ export default function AdminDashboard() {
       const data = await res.json();
       setApplications(data);
     } catch (err) {
-      console.error(err);
       toast({
         title: "Error",
         description: "Failed to load applications",
@@ -126,7 +67,7 @@ export default function AdminDashboard() {
     sessionStorage.removeItem("admin_token");
     toast({
       title: "Logged Out",
-      description: "You have been successfully logged out",
+      description: "You have been logged out.",
     });
     navigate("/admin/login");
   };
@@ -136,13 +77,53 @@ export default function AdminDashboard() {
     setIsDialogOpen(true);
   };
 
+  const handleDelete = async (application) => {
+    if (!confirm(`Delete application from ${application.name}?`)) return;
+
+    try {
+      const token = sessionStorage.getItem("admin_token");
+      const res = await fetch(
+        `${BACKEND_URL}/api/applications/${application._id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: "Failed to delete",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setApplications((prev) =>
+        prev.filter((app) => app._id !== application._id)
+      );
+
+      setIsDialogOpen(false);
+
+      toast({ title: "Deleted", description: "Application removed." });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Server not responding",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDownloadPDF = async (application) => {
     try {
       const token = sessionStorage.getItem("admin_token");
 
       const res = await fetch(
         `${BACKEND_URL}/api/applications/${application._id}/pdf`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       const blob = await res.blob();
@@ -152,12 +133,7 @@ export default function AdminDashboard() {
       a.href = url;
       a.download = `application_${application._id}.pdf`;
       a.click();
-
-      toast({
-        title: "PDF Downloaded",
-        description: `Application ${application._id} PDF downloaded`,
-      });
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to download PDF",
@@ -166,44 +142,90 @@ export default function AdminDashboard() {
     }
   };
 
-  const formatLoanCategory = (category) => {
-    const categories = {
-      personal: "Personal Loan",
-      housing: "Housing Loan",
-      business: "Business Loan",
-      vehicle: "Vehicle Loan",
-    };
-    return categories[category] || category;
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-8 px-4">
-      <div className="container max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage loan applications
-            </p>
-          </div>
+          <h1 className="text-4xl font-bold">Admin Dashboard</h1>
 
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate("/admin/settings")}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+              <Settings className="mr-2 h-4 w-4" /> Settings
             </Button>
-
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
+            <Button variant="destructive" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" /> Logout
             </Button>
           </div>
         </div>
 
-        {/* TABLE SECTION (unchanged from your version) */}
-        {/* ... all your existing table code stays the same ... */}
+        {/* APPLICATIONS TABLE */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Manage Loan Applications</CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Loan</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {applications.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan="5" className="text-center py-6">
+                      No applications found
+                    </TableCell>
+                  </TableRow>
+                )}
+
+                {applications.map((app) => (
+                  <TableRow key={app._id}>
+                    <TableCell>{app.name}</TableCell>
+                    <TableCell>{app.phoneNumber}</TableCell>
+                    <TableCell>{app.loanCategory}</TableCell>
+                    <TableCell>
+                      {new Date(app.submittedAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewDetails(app)}
+                      >
+                        View
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDownloadPDF(app)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(app)}
+                      >
+                        Delete
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
       </div>
 
@@ -213,22 +235,21 @@ export default function AdminDashboard() {
           <DialogHeader>
             <DialogTitle>Application Details</DialogTitle>
             <DialogDescription>
-              Complete details for application {selectedApplication?._id}
+              Complete details of the applicant.
             </DialogDescription>
           </DialogHeader>
 
           {selectedApplication && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
 
-              {/** Helper component */}
-              {[ 
+              {[
                 ["Full Name", selectedApplication.name],
                 ["Phone Number", selectedApplication.phoneNumber],
-                ["Primary Contact Number", selectedApplication.primaryContactNumber],
+                ["Primary Contact", selectedApplication.primaryContactNumber],
                 ["Gender", selectedApplication.gender],
-                ["Date of Birth", selectedApplication.dateOfBirth],
-                ["Loan Type", formatLoanCategory(selectedApplication.loanCategory)],
-                ["Loan Amount", selectedApplication.loanAmount],
+                ["DOB", selectedApplication.dateOfBirth],
+                ["Loan Category", selectedApplication.loanCategory],
+                ["Loan Category Other", selectedApplication.loanCategoryOther],
                 ["Address", selectedApplication.address],
                 ["Referral Name 1", selectedApplication.referralName1],
                 ["Referral Phone 1", selectedApplication.referralPhone1],
@@ -236,23 +257,21 @@ export default function AdminDashboard() {
                 ["Referral Phone 2", selectedApplication.referralPhone2],
               ].map(([label, value]) => (
                 <div key={label}>
-                  <p className="text-sm font-medium text-muted-foreground">{label}</p>
+                  <p className="text-sm text-gray-500">{label}</p>
                   <p className="font-medium">{value || "-"}</p>
                 </div>
               ))}
 
-              <div className="col-span-2 flex justify-end gap-3 mt-4">
+              <div className="col-span-2 flex justify-end gap-3 mt-6">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Close
                 </Button>
-
                 <Button
-                  onClick={() => handleDownloadPDF(selectedApplication)}
                   variant="outline"
+                  onClick={() => handleDownloadPDF(selectedApplication)}
                 >
                   <Download className="h-4 w-4 mr-2" /> PDF
                 </Button>
-
                 <Button
                   variant="destructive"
                   onClick={() => handleDelete(selectedApplication)}
