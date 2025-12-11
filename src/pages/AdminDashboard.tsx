@@ -42,20 +42,20 @@ export default function AdminDashboard() {
     fetchApplications(token);
   }, []);
 
-  const fetchApplications = async (token) => {
+  // ✅ CORRECT ENDPOINT: /application
+  const fetchApplications = async (token: string) => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/applications`, {
+      const res = await fetch(`${BACKEND_URL}/application`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.status === 401) {
         sessionStorage.removeItem("admin_token");
-        navigate("/admin/login");
-        return;
+        return navigate("/admin/login");
       }
 
       const data = await res.json();
-      setApplications(data);
+      setApplications(data); // backend returns full list array
     } catch (err) {
       toast({
         title: "Error",
@@ -74,18 +74,19 @@ export default function AdminDashboard() {
     navigate("/admin/login");
   };
 
-  const handleViewDetails = (application) => {
+  const handleViewDetails = (application: any) => {
     setSelectedApplication(application);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (application) => {
+  const handleDelete = async (application: any) => {
     if (!confirm(`Delete application from ${application.name}?`)) return;
 
     try {
       const token = sessionStorage.getItem("admin_token");
+
       const res = await fetch(
-        `${BACKEND_URL}/api/applications/${application._id}`,
+        `${BACKEND_URL}/application/${application._id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -117,16 +118,26 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDownloadPDF = async (application) => {
+  // ✅ FIXED PDF DOWNLOAD ROUTE: /application/:id/pdf
+  const handleDownloadPDF = async (application: any) => {
     try {
       const token = sessionStorage.getItem("admin_token");
 
       const res = await fetch(
-        `${BACKEND_URL}/api/applications/${application._id}/pdf`,
+        `${BACKEND_URL}/application/${application._id}/pdf`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: "Failed to download PDF",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -144,22 +155,23 @@ export default function AdminDashboard() {
     }
   };
 
-  // Memoized filtered applications for performance
+  // Filter + Search
   const filteredApplications = useMemo(() => {
-    return applications.filter((app) => {
+    return applications.filter((app: any) => {
       const matchesName = app.name
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchTerm.toLowerCase());
+
       const matchesLoan =
-        filterLoanCategory === "" || app.loanCategory === filterLoanCategory;
+        filterLoanCategory === "" ||
+        app.loanCategory === filterLoanCategory;
 
       return matchesName && matchesLoan;
     });
   }, [applications, searchTerm, filterLoanCategory]);
 
-  // Get unique loan categories for the filter dropdown
   const loanCategories = useMemo(
-    () => [...new Set(applications.map((app) => app.loanCategory))],
+    () => [...new Set(applications.map((app: any) => app.loanCategory))],
     [applications]
   );
 
@@ -183,23 +195,23 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* SEARCH & FILTER */}
+        {/* SEARCH + FILTER */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4">
           <input
             type="text"
             placeholder="Search by name..."
-            className="border rounded px-3 py-2 w-full sm:w-1/2 transition-all focus:ring-2 focus:ring-blue-400"
+            className="border rounded px-3 py-2 w-full sm:w-1/2"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
 
           <select
-            className="border rounded px-3 py-2 w-full sm:w-1/2 transition-all focus:ring-2 focus:ring-blue-400"
+            className="border rounded px-3 py-2 w-full sm:w-1/2"
             value={filterLoanCategory}
             onChange={(e) => setFilterLoanCategory(e.target.value)}
           >
             <option value="">All Loan Categories</option>
-            {loanCategories.map((category) => (
+            {loanCategories.map((category: string) => (
               <option key={category} value={category}>
                 {category}
               </option>
@@ -207,7 +219,7 @@ export default function AdminDashboard() {
           </select>
         </div>
 
-        {/* APPLICATIONS TABLE */}
+        {/* TABLE */}
         <Card>
           <CardHeader>
             <CardTitle>Manage Loan Applications</CardTitle>
@@ -228,13 +240,13 @@ export default function AdminDashboard() {
               <TableBody>
                 {filteredApplications.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan="5" className="text-center py-6">
+                    <TableCell colSpan={5} className="text-center py-6">
                       No applications found
                     </TableCell>
                   </TableRow>
                 )}
 
-                {filteredApplications.map((app) => (
+                {filteredApplications.map((app: any) => (
                   <TableRow key={app._id}>
                     <TableCell>{app.name}</TableCell>
                     <TableCell>{app.phoneNumber}</TableCell>
@@ -275,7 +287,7 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* VIEW DETAILS MODAL */}
+      {/* DIALOG */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto p-6 rounded-xl">
           <DialogHeader>
@@ -308,10 +320,7 @@ export default function AdminDashboard() {
               ))}
 
               <div className="col-span-2 flex justify-end gap-3 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Close
                 </Button>
                 <Button
