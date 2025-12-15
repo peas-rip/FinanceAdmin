@@ -15,8 +15,7 @@ export default function ThankYou() {
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
             <img src={saiLogo} alt="Sai Financial Services" className="h-12 w-12 object-contain" />
             <div>
-              <h1 className="text-xl font-bold text-foreground">Sai Financial Services</h1>
-              <p className="text-xs text-muted-foreground">Your Trusted Financial Partner</p>
+              <h1 className="text-xl font-bold text-foreground">Sri Sai Financial Services</h1>
             </div>
           </div>
         </div>
@@ -79,7 +78,7 @@ export default function ThankYou() {
                 Return to Home
               </Button>
               <p className="text-xs text-muted-foreground">
-                Need help? Contact us at support@saifinancial.com
+                Need help? Contact us +91 8660871116
               </p>
             </div>
           </CardContent>
