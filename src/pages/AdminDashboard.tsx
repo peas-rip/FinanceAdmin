@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import Lottie from "lottie-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -44,6 +45,9 @@ export default function AdminDashboard() {
 
   const [storage, setStorage] = useState(null);
 
+  // ✅ LOADING STATE
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const token = sessionStorage.getItem("admin_token");
     if (!token) return navigate("/admin/login");
@@ -59,6 +63,8 @@ export default function AdminDashboard() {
 
   const fetchApplications = async (token) => {
     try {
+      setLoading(true);
+
       const res = await fetch(`${BACKEND_URL}/applications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -69,13 +75,16 @@ export default function AdminDashboard() {
         return;
       }
 
-      setApplications(await res.json());
+      const data = await res.json();
+      setApplications(data);
     } catch {
       toast({
         title: "Error",
         description: "Failed to load applications",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,7 +94,9 @@ export default function AdminDashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) setStorage(await res.json());
-    } catch {}
+    } catch {
+      // silent
+    }
   };
 
   const handleLogout = () => {
@@ -151,7 +162,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // ✅ FILTERING
   const filteredApplications = useMemo(() => {
     const now = new Date();
     const sevenDaysAgo = new Date();
@@ -173,7 +183,6 @@ export default function AdminDashboard() {
     });
   }, [applications, searchTerm, filterLoanCategory, last7DaysOnly]);
 
-  // ✅ PAGINATION
   const totalPages = Math.ceil(filteredApplications.length / PAGE_SIZE);
 
   const paginatedApplications = useMemo(() => {
@@ -192,6 +201,19 @@ export default function AdminDashboard() {
       : storage?.status === "warning"
       ? "bg-yellow-500"
       : "bg-green-500";
+
+  // ✅ FULLSCREEN LOTTIE LOADER
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Lottie
+          path="https://lottie.host/386c489f-2593-43c4-82b2-f8e7a476cf4c/jOIcLyWKDZ.lottie"
+          loop
+          style={{ width: 220, height: 220 }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -318,7 +340,7 @@ export default function AdminDashboard() {
               </TableBody>
             </Table>
 
-            {/* PAGINATION CONTROLS */}
+            {/* PAGINATION */}
             {totalPages > 1 && (
               <div className="flex justify-between items-center mt-4">
                 <Button
@@ -346,7 +368,7 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* DETAILS MODAL (UNCHANGED) */}
+      {/* DETAILS MODAL */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
